@@ -20,6 +20,8 @@ public class CalculatorImpl implements Calculator {
     @Override
     public String evaluate(String statement) {
         String s = splitParentheses(statement); //отделение первоочерёдно вычисляемых выражений в скобках
+        if(s==null)
+            return null;
         s = splitMultDiv(s); //отделение второй очереди, умножение и деление
         processMap(); //обрезка скобок в строках-выражениях и деление многооператорных выражений на однооператорные
         calculateMap(); //вычисление простых выражений
@@ -64,25 +66,27 @@ public class CalculatorImpl implements Calculator {
     }
 
     private String splitMultDiv(String statement) {
-        int open = 0; //координаты начала и конца строки с умножением/делением
-        int close;
+        int open; //координаты начала и конца строки с умножением/делением
+        int close = statement.length();
 
         for (int i = 0; i < statement.length(); i++) { //если строка между плюсами/минусами содержит умножение/деление, она добавляется в коллекцию
             if (statement.charAt(i) == '+' || statement.charAt(i) == '-') {
-                close = i;
+                open = i+1;
+
+                String statement1 = statement.substring(open);
+                if((statement1.contains("+") && ((statement1.indexOf("+")<statement1.indexOf("-"))) || //проверка наличия плюса и его первой очереди перед минусом либо отсутствия минуча
+                        (statement1.contains("+") && !statement1.contains("-"))))
+                    close = statement1.indexOf('+', open);
+                else if((statement1.contains("-") && ((statement1.indexOf("-")<statement1.indexOf("+"))) ||
+                        (statement1.contains("-") && !statement1.contains("+"))))
+                    close = statement1.indexOf('-', open);
+
                 if(statement.substring(open, close).contains("/")||
                         statement.substring(open, close).contains("*")) {
                     subStrings.put("s" + j, statement.substring(open, close));
-                    open = i + 1;
                     j++;
                 }
             }
-        }
-
-        if(statement.substring(open).contains("/")|| //проверка наличия умножения/деления между последним плюсом/минусом и концом строки
-                statement.substring(open).contains("*")) {
-            subStrings.put("s" + j, statement.substring(open));
-            j++;
         }
 
         for (String i : subStrings.keySet()) { //замена выражений с умножением/делением на ключи из коллекции в исходной строке
